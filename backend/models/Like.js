@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const LikeSchema = new mongoose.Schema(
   {
@@ -11,4 +11,5 @@ const LikeSchema = new mongoose.Schema(
 // Ensure a user can like a post only once
 LikeSchema.index({ postId: 1, userId: 1 }, { unique: true });
 
-module.exports = mongoose.model("Like", LikeSchema);
+const Like = mongoose.model("Like", LikeSchema);
+export default Like;

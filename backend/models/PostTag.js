@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const PostTagSchema = new mongoose.Schema(
   {
@@ -11,4 +11,5 @@ const PostTagSchema = new mongoose.Schema(
 // Ensure uniqueness of post-tag pairs
 PostTagSchema.index({ postId: 1, tagId: 1 }, { unique: true });
 
-module.exports = mongoose.model("PostTag", PostTagSchema);
+const PostTag = mongoose.model("PostTag", PostTagSchema);
+export default PostTag;

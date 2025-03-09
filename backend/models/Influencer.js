@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const InfluencerSchema = new mongoose.Schema(
   {
@@ -10,4 +10,5 @@ const InfluencerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Influencer", InfluencerSchema);
+const Influencer = mongoose.model("Influencer", InfluencerSchema);
+export default Influencer;

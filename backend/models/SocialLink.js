@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const SocialLinkSchema = new mongoose.Schema(
   {
@@ -9,4 +9,5 @@ const SocialLinkSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("SocialLink", SocialLinkSchema);
+const SocialLink = mongoose.model("SocialLink", SocialLinkSchema);
+export default SocialLink;
