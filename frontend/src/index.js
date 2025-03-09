@@ -5,6 +5,7 @@ import './index.css';
 import App from './App';
 import Login from './components/Login';
 import Register from './components/Register';
+import YouTubeLinkForm from './components/YouTubeLinkForm';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -15,6 +16,7 @@ root.render(
         <Route exact path="/" element={<App />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/generate" element={<YouTubeLinkForm />} />
       </Routes>
     </Router>
   </React.StrictMode>
