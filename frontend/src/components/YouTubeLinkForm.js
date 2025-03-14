@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import config from '../config';
 
 function YouTubeLinkForm() {
   const [link, setLink] = useState('');
@@ -6,7 +7,7 @@ function YouTubeLinkForm() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      const response = await fetch('/api/youtube-transcript', {
+      const response = await fetch(`${config.apiBaseUrl}/api/youtube-transcript/transcript`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
