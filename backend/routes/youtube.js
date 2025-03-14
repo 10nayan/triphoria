@@ -47,9 +47,13 @@ async function generateBlogFromTranscript(transcript) {
       presence_penalty: 0.3
     }),
   });
-
-  const data = await response.json();
-  return data.choices[0].text.trim();
+  if (!response.ok) {
+    throw new Error('Failed to generate blog from transcript');
+  }
+  else {
+    const data = await response.json();
+    return data.choices[0].text.trim();
+  }
 }
 
 export default router;
