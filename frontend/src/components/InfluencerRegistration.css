@@ -1,0 +1,242 @@
+.page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: Arial, sans-serif;
+}
+
+.page-header {
+  background-color: #1a73e8;
+  padding: 15px 20px;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.page-header .header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.page-header .user-controls {
+  display: flex;
+  align-items: center;
+}
+
+.page-header .welcome-message {
+  margin-right: 15px;
+  font-size: 16px;
+}
+
+.page-header .user-menu {
+  display: flex;
+  align-items: center;
+}
+
+.page-header .nav-link {
+  color: white;
+  text-decoration: none;
+  margin: 0 10px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.page-header .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.influencer-form-container {
+  max-width: 700px;
+  margin: 30px auto;
+  padding: 30px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.influencer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #202124;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+.character-count {
+  text-align: right;
+  color: #5f6368;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.social-link-input {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.remove-link-button {
+  background-color: #f1f3f4;
+  color: #5f6368;
+  border: none;
+  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.remove-link-button:hover {
+  background-color: #e8eaed;
+}
+
+.remove-link-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.add-link-button {
+  background-color: transparent;
+  color: #1a73e8;
+  border: none;
+  padding: 8px 0;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  font-weight: 500;
+}
+
+.add-link-button:hover {
+  text-decoration: underline;
+}
+
+.submit-button {
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 10px;
+}
+
+.submit-button:hover {
+  background-color: #0d62c9;
+}
+
+.submit-button:disabled {
+  background-color: #a9a9a9;
+  cursor: not-allowed;
+}
+
+.success-message {
+  background-color: #e6f4ea;
+  color: #137333;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.error-message {
+  background-color: #fce8e6;
+  color: #d93025;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.loading-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid #1a73e8;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Animation for error messages */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake {
+  animation: shake 0.6s;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .influencer-form-container {
+    padding: 20px;
+    margin: 20px;
+  }
+  
+  .page-header .header-content {
+    flex-direction: column;
+  }
+  
+  .page-header h1 {
+    margin-bottom: 10px;
+  }
+  
+  .page-header .user-controls {
+    margin-top: 10px;
+  }
+}

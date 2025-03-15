@@ -23,6 +23,7 @@ function App() {
                 <span className="welcome-message">Welcome, {currentUser.username || 'User'}</span>
                 <div className="user-menu">
                   <Link to="/generate" className="nav-link">Generate Blog</Link>
+                  <Link to="/become-influencer" className="nav-link">Become Influencer</Link>
                   <button onClick={handleLogout} className="logout-button">Logout</button>
                 </div>
               </>
