@@ -23,7 +23,7 @@ function extractVideoId(link) {
 }
 
 async function generateBlogFromTranscript(transcript) {
-  const response = await fetch('https://api.openai.com/v1/completions', {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -34,7 +34,7 @@ async function generateBlogFromTranscript(transcript) {
       messages: [
         {
           role: 'system',
-          content: `You are an expert SEO blog writer specializing in transforming YouTube video transcripts into well-structured, engaging, and SEO-optimized travel blogs. Your task is to remove filler words, improve readability, and structure content with proper headings(H2, H3), bullet points, SEO keywords and engaging descriptions. Ensure the blog remains engaging, natural, and informative while maintaining the original storytelling tone. Include SEO-friendly keywords like travel guide, best places to visit, and top things to do. Add Travel tips and FAQs at the end for SEO. Blog title should have Traveller type(Solo, Couple, Family, Budget Traveler, Luxury Traveler), Trip Duration (Weekend, 5-day, 2-week trip), Season (Winter, Summer, Off-season, Monsoon), Trip Type (Adventure, Relaxation, Cultural, Road Trip, Foodie) as possible. This is the youtube transcript below:\n ${transcript}`
+          content: [{type: 'text', text: `You are an expert SEO blog writer specializing in transforming YouTube video transcripts into well-structured, engaging, and SEO-optimized travel blogs. Your task is to remove filler words, improve readability, and structure content with proper headings(H2, H3), bullet points, SEO keywords and engaging descriptions. Ensure the blog remains engaging, natural, and informative while maintaining the original storytelling tone. Include SEO-friendly keywords like travel guide, best places to visit, and top things to do. Add Travel tips and FAQs at the end for SEO. Blog title should have Traveller type(Solo, Couple, Family, Budget Traveler, Luxury Traveler), Trip Duration (Weekend, 5-day, 2-week trip), Season (Winter, Summer, Off-season, Monsoon), Trip Type (Adventure, Relaxation, Cultural, Road Trip, Foodie) as possible. This is the youtube transcript below:\n ${transcript}` }]
         }
       ],
       response_format: {
@@ -48,11 +48,13 @@ async function generateBlogFromTranscript(transcript) {
     }),
   });
   if (!response.ok) {
+    const data = await response.json();
+    console.error(data);
     throw new Error('Failed to generate blog from transcript');
   }
   else {
     const data = await response.json();
-    return data.choices[0].text.trim();
+    return data.choices[0].message.content.trim();
   }
 }
 
