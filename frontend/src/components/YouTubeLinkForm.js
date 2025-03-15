@@ -10,6 +10,10 @@ function YouTubeLinkForm() {
   const [videoId, setVideoId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [blogSaved, setBlogSaved] = useState(false);
+  const [blogSlug, setBlogSlug] = useState('');
+  const [blogTitle, setBlogTitle] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -25,6 +29,8 @@ function YouTubeLinkForm() {
     setError('');
     setBlogContent('');
     setVideoId('');
+    setBlogSaved(false);
+    setBlogSlug('');
     
     try {
       // Get token from localStorage
@@ -57,11 +63,66 @@ function YouTubeLinkForm() {
       const data = await response.json();
       setBlogContent(data.blog);
       setVideoId(data.videoId);
+      
+      // Extract title from the blog content
+      const titleMatch = data.blog.match(/<h1[^>]*>(.*?)<\/h1>/i);
+      if (titleMatch && titleMatch[1]) {
+        setBlogTitle(titleMatch[1].replace(/<[^>]*>/g, '').trim());
+      } else {
+        setBlogTitle(`Blog about YouTube video ${videoId}`);
+      }
     } catch (error) {
       console.error('Error fetching transcript:', error);
       setError(error.message || 'Failed to generate blog content. Please check your link and try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const saveBlog = async () => {
+    if (!blogContent || !videoId || !blogTitle) {
+      setError('No blog content to save');
+      return;
+    }
+
+    setIsSaving(true);
+    setError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('You must be logged in to save a blog');
+      }
+
+      const videoThumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+      const response = await fetch(`${config.apiBaseUrl}/api/blogs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: blogTitle,
+          content: blogContent,
+          videoId,
+          videoThumbnail
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save blog');
+      }
+
+      const data = await response.json();
+      setBlogSaved(true);
+      setBlogSlug(data.slug);
+    } catch (error) {
+      console.error('Error saving blog:', error);
+      setError(error.message || 'Failed to save blog. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -121,7 +182,25 @@ function YouTubeLinkForm() {
 
         {blogContent && videoId && !isLoading && (
           <div className="blog-content-container">
-            <h3>Generated Blog Content</h3>
+            <div className="blog-actions">
+              <h3>Generated Blog Content</h3>
+              {!blogSaved ? (
+                <button 
+                  onClick={saveBlog} 
+                  className="save-button"
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Saving...' : 'Save Blog'}
+                </button>
+              ) : (
+                <div className="blog-saved-message">
+                  <span>Blog saved successfully!</span>
+                  <Link to={`/blog/${blogSlug}`} className="view-blog-link">
+                    View Published Blog
+                  </Link>
+                </div>
+              )}
+            </div>
             
             <div className="video-thumbnail-container">
               <img 
