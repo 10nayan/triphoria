@@ -96,6 +96,38 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get most viewed blogs
+router.get('/most-viewed', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 6; // Default to 6 blogs
+    
+    const blogs = await Blog.find()
+      .sort({ views: -1 }) // Sort by views in descending order
+      .limit(limit)
+      .populate({
+        path: 'userId',
+        select: 'username firstName lastName profilePicture',
+        model: 'User'
+      });
+    
+    // For each blog, check if the user is an influencer
+    const blogsWithInfluencerInfo = await Promise.all(
+      blogs.map(async (blog) => {
+        const influencer = await Influencer.findOne({ userId: blog.userId._id });
+        return {
+          ...blog.toObject(),
+          isInfluencer: !!influencer
+        };
+      })
+    );
+    
+    res.json(blogsWithInfluencerInfo);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get blogs by user ID
 router.get('/user/:userId', async (req, res) => {
   try {

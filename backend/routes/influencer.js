@@ -1,6 +1,7 @@
 import express from 'express';
 import Influencer from '../models/Influencer.js';
 import User from '../models/User.js';
+import Blog from '../models/Blog.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
@@ -90,6 +91,86 @@ router.put('/update', auth, async (req, res) => {
     }
 
     res.json(influencer);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get top influencers
+router.get('/top', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10; // Default to 10 influencers
+    
+    // Aggregate to find influencers with the most viewed blogs
+    const topInfluencers = await Blog.aggregate([
+      // Group by userId and sum the views
+      { $group: {
+          _id: "$userId",
+          totalViews: { $sum: "$views" },
+          blogCount: { $sum: 1 }
+        }
+      },
+      // Sort by total views in descending order
+      { $sort: { totalViews: -1 } },
+      // Limit to the top N influencers
+      { $limit: limit }
+    ]);
+    
+    // Get the user IDs of the top influencers
+    const userIds = topInfluencers.map(item => item._id);
+    
+    // Find the influencer profiles for these users
+    const influencerProfiles = await Influencer.find({
+      userId: { $in: userIds }
+    });
+    
+    // Find the user details for these users
+    const users = await User.find({
+      _id: { $in: userIds }
+    }).select('username firstName lastName profilePicture');
+    
+    // Create a map of user IDs to user details
+    const userMap = {};
+    users.forEach(user => {
+      userMap[user._id.toString()] = user;
+    });
+    
+    // Create a map of user IDs to influencer profiles
+    const influencerMap = {};
+    influencerProfiles.forEach(profile => {
+      influencerMap[profile.userId.toString()] = profile;
+    });
+    
+    // Combine the data
+    const result = topInfluencers.map(item => {
+      const userId = item._id.toString();
+      const user = userMap[userId];
+      const influencer = influencerMap[userId];
+      
+      if (!user || !influencer) return null;
+      
+      return {
+        user: {
+          _id: user._id,
+          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          profilePicture: user.profilePicture
+        },
+        influencer: {
+          bio: influencer.bio,
+          websiteLink: influencer.websiteLink,
+          socialLinks: influencer.socialLinks
+        },
+        stats: {
+          totalViews: item.totalViews,
+          blogCount: item.blogCount
+        }
+      };
+    }).filter(item => item !== null); // Remove any null entries
+    
+    res.json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
