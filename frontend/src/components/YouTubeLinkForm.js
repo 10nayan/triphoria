@@ -15,6 +15,30 @@ function checkIfValidYoutubeLink(youtubeLink) {
   return true;
 }
 
+// Function to extract video ID from YouTube link
+function extractVideoId(link) {
+  try {
+    const url = new URL(link);
+    
+    // Handle standard YouTube URL (youtube.com/watch?v=VIDEO_ID)
+    if (url.hostname.includes('youtube.com')) {
+      return url.searchParams.get('v');
+    }
+    
+    // Handle shortened YouTube URL (youtu.be/VIDEO_ID)
+    if (url.hostname === 'youtu.be') {
+      // The video ID is in the pathname (removing the leading slash)
+      const pathParts = url.pathname.split('/');
+      return pathParts[1]?.split('?')[0]; // Get the ID and remove any query parameters
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error extracting video ID:', error);
+    return null;
+  }
+}
+
 function YouTubeLinkForm() {
   const [link, setLink] = useState('');
   const [blogContent, setBlogContent] = useState('');
@@ -50,6 +74,14 @@ function YouTubeLinkForm() {
       return;
     }
     
+    // Extract video ID from the link
+    const extractedVideoId = extractVideoId(link);
+    if (!extractedVideoId) {
+      setIsLoading(false);
+      setError('Could not extract video ID from the YouTube link. Please provide a valid URL.');
+      return;
+    }
+    
     try {
       // Get token from localStorage
       const token = localStorage.getItem('token');
@@ -80,14 +112,16 @@ function YouTubeLinkForm() {
       
       const data = await response.json();
       setBlogContent(data.blog);
-      setVideoId(data.videoId);
+      
+      // Use the extracted video ID from the link
+      setVideoId(extractedVideoId);
       
       // Extract title from the blog content
       const titleMatch = data.blog.match(/<h1[^>]*>(.*?)<\/h1>/i);
       if (titleMatch && titleMatch[1]) {
         setBlogTitle(titleMatch[1].replace(/<[^>]*>/g, '').trim());
       } else {
-        setBlogTitle(`Blog about YouTube video ${videoId}`);
+        setBlogTitle(`Blog about YouTube video ${extractedVideoId}`);
       }
     } catch (error) {
       console.error('Error fetching transcript:', error);
