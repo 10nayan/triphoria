@@ -7,6 +7,24 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Simple in-memory cache for top influencers
+const cache = {
+  topInfluencers: {
+    data: null,
+    timestamp: 0,
+    ttl: 10 * 60 * 1000 // 10 minutes in milliseconds
+  }
+};
+
+// Function to check if cache is valid
+const isCacheValid = (cacheKey) => {
+  const cacheItem = cache[cacheKey];
+  if (!cacheItem.data) return false;
+  
+  const now = Date.now();
+  return (now - cacheItem.timestamp) < cacheItem.ttl;
+};
+
 const router = express.Router();
 
 // Middleware to verify JWT token
@@ -97,82 +115,102 @@ router.put('/update', auth, async (req, res) => {
   }
 });
 
-// Get top influencers
+// Get top influencers - Optimized version
 router.get('/top', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10; // Default to 10 influencers
+    const cacheKey = 'topInfluencers';
     
-    // Aggregate to find influencers with the most viewed blogs
-    const topInfluencers = await Blog.aggregate([
-      // Group by userId and sum the views
-      { $group: {
+    // Check if we have valid cached data
+    if (isCacheValid(cacheKey) && cache[cacheKey].limit === limit) {
+      return res.json(cache[cacheKey].data);
+    }
+    
+    // Use an optimized aggregation pipeline with lookups
+    const result = await Blog.aggregate([
+      // Stage 1: Group by userId and calculate stats
+      { 
+        $group: {
           _id: "$userId",
           totalViews: { $sum: "$views" },
           blogCount: { $sum: 1 }
         }
       },
-      // Sort by total views in descending order
-      { $sort: { totalViews: -1 } },
-      // Limit to the top N influencers
-      { $limit: limit }
+      
+      // Stage 2: Only include users who are influencers (join with influencers collection)
+      {
+        $lookup: {
+          from: 'influencers',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'influencerInfo'
+        }
+      },
+      
+      // Stage 3: Filter out users who are not influencers
+      {
+        $match: {
+          'influencerInfo': { $ne: [] }
+        }
+      },
+      
+      // Stage 4: Sort by total views in descending order
+      { 
+        $sort: { 
+          totalViews: -1 
+        } 
+      },
+      
+      // Stage 5: Limit to the top N influencers
+      { 
+        $limit: limit 
+      },
+      
+      // Stage 6: Lookup user details
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'userInfo'
+        }
+      },
+      
+      // Stage 7: Format the response
+      {
+        $project: {
+          _id: 0,
+          user: {
+            _id: { $arrayElemAt: ['$userInfo._id', 0] },
+            username: { $arrayElemAt: ['$userInfo.username', 0] },
+            firstName: { $arrayElemAt: ['$userInfo.firstName', 0] },
+            lastName: { $arrayElemAt: ['$userInfo.lastName', 0] },
+            profilePicture: { $arrayElemAt: ['$userInfo.profilePicture', 0] }
+          },
+          influencer: {
+            bio: { $arrayElemAt: ['$influencerInfo.bio', 0] },
+            websiteLink: { $arrayElemAt: ['$influencerInfo.websiteLink', 0] },
+            socialLinks: { $arrayElemAt: ['$influencerInfo.socialLinks', 0] }
+          },
+          stats: {
+            totalViews: '$totalViews',
+            blogCount: '$blogCount'
+          }
+        }
+      }
     ]);
     
-    // Get the user IDs of the top influencers
-    const userIds = topInfluencers.map(item => item._id);
-    
-    // Find the influencer profiles for these users
-    const influencerProfiles = await Influencer.find({
-      userId: { $in: userIds }
-    });
-    
-    // Find the user details for these users
-    const users = await User.find({
-      _id: { $in: userIds }
-    }).select('username firstName lastName profilePicture');
-    
-    // Create a map of user IDs to user details
-    const userMap = {};
-    users.forEach(user => {
-      userMap[user._id.toString()] = user;
-    });
-    
-    // Create a map of user IDs to influencer profiles
-    const influencerMap = {};
-    influencerProfiles.forEach(profile => {
-      influencerMap[profile.userId.toString()] = profile;
-    });
-    
-    // Combine the data
-    const result = topInfluencers.map(item => {
-      const userId = item._id.toString();
-      const user = userMap[userId];
-      const influencer = influencerMap[userId];
-      
-      if (!user || !influencer) return null;
-      
-      return {
-        user: {
-          _id: user._id,
-          username: user.username,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          profilePicture: user.profilePicture
-        },
-        influencer: {
-          bio: influencer.bio,
-          websiteLink: influencer.websiteLink,
-          socialLinks: influencer.socialLinks
-        },
-        stats: {
-          totalViews: item.totalViews,
-          blogCount: item.blogCount
-        }
-      };
-    }).filter(item => item !== null); // Remove any null entries
+    // Update cache
+    cache[cacheKey] = {
+      data: result,
+      timestamp: Date.now(),
+      limit: limit,
+      ttl: 10 * 60 * 1000 // 10 minutes
+    };
     
     res.json(result);
   } catch (err) {
-    console.error(err);
+    console.error('Error fetching top influencers:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
