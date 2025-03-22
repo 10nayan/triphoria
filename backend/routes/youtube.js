@@ -105,12 +105,11 @@ async function getYoutubeTranscript(youtubeLink) {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'X-API-Key': `${process.env.SUPADATA_API_KEY}`,
+      'X-API-Key': `${process.env.SUPADATA_AI_API_KEY}`,
     }
   });
   if (!response.ok) {
     const data = await response.json();
-    console.log('Error:', data);
     console.error(data);
     throw new Error('Failed to get the transcript from Youtube');
   }

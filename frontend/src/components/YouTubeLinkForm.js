@@ -4,6 +4,17 @@ import { useAuth } from '../context/AuthContext';
 import config from '../config';
 import './YouTubeLinkForm.css';
 
+// Function to validate YouTube links
+function checkIfValidYoutubeLink(youtubeLink) {
+  // Validate the YouTube URL
+  const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+
+  if (!youtubeRegex.test(youtubeLink)) {
+    return false;
+  }
+  return true;
+}
+
 function YouTubeLinkForm() {
   const [link, setLink] = useState('');
   const [blogContent, setBlogContent] = useState('');
@@ -31,6 +42,13 @@ function YouTubeLinkForm() {
     setVideoId('');
     setBlogSaved(false);
     setBlogSlug('');
+    
+    // Validate YouTube link before sending to backend
+    if (!checkIfValidYoutubeLink(link)) {
+      setIsLoading(false);
+      setError('Invalid YouTube link. Please provide a valid URL.');
+      return;
+    }
     
     try {
       // Get token from localStorage

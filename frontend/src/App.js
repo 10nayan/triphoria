@@ -20,7 +20,7 @@ function App() {
       setBlogsError('');
       
       try {
-        const response = await fetch(`${config.apiBaseUrl}/api/blogs/most-viewed?limit=6`);
+        const response = await fetch(`${config.apiBaseUrl}/api/blogs/most-viewed?limit=10`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch most viewed blogs');
@@ -76,7 +76,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         <div className="header-content">
-          <h1>Triphoria</h1>
+          <h1>Zillion Trips</h1>
           <div className="user-controls">
             {currentUser ? (
               <>
@@ -143,7 +143,7 @@ function App() {
                     <div key={blog._id} className="blog-card">
                       {blog.videoThumbnail && (
                         <div className="blog-thumbnail">
-                          <img 
+                          <img onClick={() => navigate(`/${user.username}/blog/${baseSlug}`)}
                             src={blog.videoThumbnail} 
                             alt={blog.title} 
                             className="thumbnail-img"
@@ -289,7 +289,7 @@ function App() {
         </div>
       </main>
       <footer>
-        <p>&copy; {new Date().getFullYear()} Triphoria. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Zillion Trips. All rights reserved.</p>
       </footer>
     </div>
   );

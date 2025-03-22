@@ -168,7 +168,7 @@ const Register = () => {
     <div className="auth-container">
       <div className="auth-header">
         <h1>Create an Account</h1>
-        <p>Join Triphoria to connect with your favourite inflencer</p>
+        <p>Join Zillion Trips to connect with your favourite inflencer</p>
       </div>
       
       {registerError && (
