@@ -153,7 +153,7 @@ function YouTubeLinkForm() {
     <div className="page-container">
       <header className="page-header">
         <div className="header-content">
-          <h1>Generate Blog</h1>
+          <h1>Zillion Trips</h1>
           <div className="user-controls">
             {currentUser && (
               <>

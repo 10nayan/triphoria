@@ -8,6 +8,24 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Simple in-memory cache for most-viewed blogs
+const cache = {
+  mostViewedBlogs: {
+    data: null,
+    timestamp: 0,
+    ttl: 5 * 60 * 1000 // 5 minutes in milliseconds
+  }
+};
+
+// Function to check if cache is valid
+const isCacheValid = (cacheKey) => {
+  const cacheItem = cache[cacheKey];
+  if (!cacheItem.data) return false;
+  
+  const now = Date.now();
+  return (now - cacheItem.timestamp) < cacheItem.ttl;
+};
+
 const router = express.Router();
 
 // Middleware to verify JWT token
@@ -96,32 +114,97 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get most viewed blogs
+// Get most viewed blogs - Optimized version
 router.get('/most-viewed', async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 6; // Default to 6 blogs
+    const limit = parseInt(req.query.limit) || 10; // Default to 10 blogs
+    const cacheKey = 'mostViewedBlogs';
     
-    const blogs = await Blog.find()
-      .sort({ views: -1 }) // Sort by views in descending order
-      .limit(limit)
-      .populate({
-        path: 'userId',
-        select: 'username firstName lastName profilePicture',
-        model: 'User'
-      });
+    // Check if we have valid cached data
+    if (isCacheValid(cacheKey) && cache[cacheKey].limit === limit) {
+      return res.json(cache[cacheKey].data);
+    }
     
-    // For each blog, check if the user is an influencer
-    const blogsWithInfluencerInfo = await Promise.all(
-      blogs.map(async (blog) => {
-        const influencer = await Influencer.findOne({ userId: blog.userId._id });
-        return {
-          ...blog.toObject(),
-          isInfluencer: !!influencer
-        };
-      })
-    );
+    // Use aggregation pipeline for efficient querying
+    const blogs = await Blog.aggregate([
+      // Stage 1: Sort by views in descending order
+      { $sort: { views: -1 } },
+      
+      // Stage 2: Limit the number of results
+      { $limit: limit },
+      
+      // Stage 3: Lookup user information
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'userInfo'
+        }
+      },
+      
+      // Stage 4: Lookup influencer information
+      {
+        $lookup: {
+          from: 'influencers',
+          localField: 'userId',
+          foreignField: 'userId',
+          as: 'influencerInfo'
+        }
+      },
+      
+      // Stage 5: Project only the fields we need
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          content: 1,
+          videoId: 1,
+          videoThumbnail: 1,
+          likes: 1,
+          slug: 1,
+          views: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          userId: { $arrayElemAt: ['$userInfo', 0] },
+          isInfluencer: { $cond: { if: { $gt: [{ $size: '$influencerInfo' }, 0] }, then: true, else: false } }
+        }
+      },
+      
+      // Stage 6: Project to format the user data
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          content: 1,
+          videoId: 1,
+          videoThumbnail: 1,
+          likes: 1,
+          slug: 1,
+          views: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          isInfluencer: 1,
+          userId: {
+            _id: '$userId._id',
+            username: '$userId.username',
+            firstName: '$userId.firstName',
+            lastName: '$userId.lastName',
+            profilePicture: '$userId.profilePicture'
+          }
+        }
+      }
+    ]);
     
-    res.json(blogsWithInfluencerInfo);
+    // Update cache
+    cache[cacheKey] = {
+      data: blogs,
+      timestamp: Date.now(),
+      limit: limit,
+      ttl: 5 * 60 * 1000 // 5 minutes
+    };
+    
+    res.json(blogs);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
