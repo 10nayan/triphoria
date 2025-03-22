@@ -6,7 +6,6 @@ const router = express.Router();
 router.post('/transcript', async (req, res) => {
   const { link } = req.body;
   try {
-    const videoId = extractVideoId(link);
     const isValidYoutubeLink = checkIfValidYoutubeLink(link);
     if (!isValidYoutubeLink) {
       throw new Error('Invalid YouTube link. Please provide a valid URL.');
@@ -17,19 +16,13 @@ router.post('/transcript', async (req, res) => {
     
     // Include the video ID in the response for thumbnail generation
     res.json({ 
-      blog,
-      videoId 
+      blog
     });
   } catch (error) {
     console.error('Error processing YouTube link:', error);
     res.status(500).json({ error: 'Failed to generate blog from YouTube link' });
   }
 });
-
-function extractVideoId(link) {
-  const url = new URL(link);
-  return url.searchParams.get('v');
-}
 
 async function generateBlogFromTranscript(transcript) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {

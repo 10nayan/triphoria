@@ -20,7 +20,7 @@ function App() {
       setBlogsError('');
       
       try {
-        const response = await fetch(`${config.apiBaseUrl}/api/blogs/most-viewed?limit=10`);
+        const response = await fetch(`${config.apiBaseUrl}/api/blogs/most-viewed?limit=30`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch most viewed blogs');
