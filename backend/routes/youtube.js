@@ -1,5 +1,4 @@
-import express from 'express';
-import { YoutubeTranscript } from 'youtube-transcript';
+import express, { json } from 'express';
 import fetch from 'node-fetch';
 
 const router = express.Router();
@@ -8,10 +7,11 @@ router.post('/transcript', async (req, res) => {
   const { link } = req.body;
   try {
     const videoId = extractVideoId(link);
-    const transcriptData = await YoutubeTranscript.fetchTranscript(videoId);
-    
-    // Extract only the text from each transcript object and join them
-    const transcriptText = transcriptData.map(item => item.text).join(' ');
+    const isValidYoutubeLink = checkIfValidYoutubeLink(link);
+    if (!isValidYoutubeLink) {
+      throw new Error('Invalid YouTube link. Please provide a valid URL.');
+    }
+    const transcriptText = await getYoutubeTranscript(link);
     
     const blog = await generateBlogFromTranscript(transcriptText);
     
@@ -98,6 +98,38 @@ async function generateBlogFromTranscript(transcript) {
     
     return content;
   }
+}
+
+async function getYoutubeTranscript(youtubeLink) {
+  const response = await fetch(`https://api.supadata.ai/v1/youtube/transcript?url=${encodeURIComponent(youtubeLink)}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': `${process.env.SUPADATA_AI_API_KEY}`,
+    }
+  });
+  if (!response.ok) {
+    const data = await response.json();
+    console.error(data);
+    throw new Error('Failed to get the transcript from Youtube');
+  }
+  else {
+    const data = await response.json();
+    let content = data.content;
+    // Extract only the text from each transcript object and join them
+    const transcriptText = content.map(item => item.text).join(' ');
+    return transcriptText;
+  }
+}
+
+function checkIfValidYoutubeLink(youtubeLink) {
+    // Validate the YouTube URL
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+
+    if (!youtubeRegex.test(youtubeLink)) {
+      return false;
+    }
+    return true;
 }
 
 export default router;
